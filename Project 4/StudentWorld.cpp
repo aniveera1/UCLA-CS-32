@@ -3,9 +3,12 @@
 #include "GameConstants.h"
 #include "Field.h"
 #include "Actor.h"
+#include "Compiler.h"
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <cmath>
+#include <vector>
 using namespace std;
 
 GameWorld* createStudentWorld(string assetDir)
@@ -17,6 +20,7 @@ GameWorld* createStudentWorld(string assetDir)
 StudentWorld::StudentWorld(std::string assetDir)
 : GameWorld(assetDir), m_ticks(2000)
 {
+    m_files = new Compiler[4];
 }
 
 // Destructor
@@ -33,7 +37,10 @@ int StudentWorld::init()
     if (! loadField(current))
         return GWSTATUS_LEVEL_ERROR;
     
-    loadObjects(current);
+    if (! loadAnts(m_files))
+        return GWSTATUS_LEVEL_ERROR;
+    
+    loadObjects(current, m_files);
     
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -54,12 +61,15 @@ int StudentWorld::move()
     resetActorMovements();
     
     list<Actor*>::iterator current;
+    list<Actor*>::iterator next;
     for (int i = 0; i < VIEW_HEIGHT; i++)
         for (int j = 0; j < VIEW_WIDTH; j++)
         {
             current = m_field[i][j].begin();
             while (*current != nullptr && current != m_field[i][j].end())
             {
+                next = ++current;
+                --current;
                 Actor* temp = *current;
                 temp->doSomething();
                 if (temp->didIMove())
@@ -67,7 +77,7 @@ int StudentWorld::move()
                     m_field[temp->getY()][temp->getX()].push_back(*current);
                     m_field[i][j].erase(current);
                 }
-                current++;
+                current = next;
             }
         }
     
@@ -80,109 +90,365 @@ int StudentWorld::move()
 void StudentWorld::cleanUp()
 {
     list<Actor*>::iterator current;
+    list<Actor*>::iterator next;
     for (int i = 0; i < VIEW_HEIGHT; i++)
         for (int j = 0; j < VIEW_WIDTH; j++)
         {
             current = m_field[i][j].begin();
             while (*current != nullptr && current != m_field[i][j].end())
             {
+                next = ++current;
+                --current;
                 delete *current;
                 m_field[i][j].erase(current);
-                current++;
+                current = next;
             }
         }
+    delete []m_files;
 }
 
-// Check movement
-bool StudentWorld::checkPebble(int x, int y) const
-{
-   if (m_field[y][x].front() != nullptr && m_field[y][x].front()->doIBlock())
-       return true;
-    return false;
-}
+///////////////
+// Accessors //
+///////////////
 
-bool StudentWorld::checkFood(int x, int y) const
+// Returns null if none
+Actor* StudentWorld::getFoodAt(int x, int y) const
 {
     list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
     temp = m_field[y][x].begin();
     while (*temp != nullptr && temp != m_field[y][x].end())
     {
+        next = ++temp;
+        --temp;
         Actor* current = *temp;
-        if (current->amIFood())
-            return true;
-        temp++;
+        if (current->isEdible())
+            return current;
+        temp = next;
     }
-    return false;
+    return nullptr;
 }
 
-// Stun everything on a certain point
-void StudentWorld::stunAll(int x, int y) const
+// Returns null if none
+Actor* StudentWorld::getPheromoneAt(int x, int y, int colony) const
 {
     list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
     temp = m_field[y][x].begin();
     while (*temp != nullptr && temp != m_field[y][x].end())
     {
+        next = ++temp;
+        --temp;
         Actor* current = *temp;
-        if (current->amIStunableAndPoisonable())
-            current->stunMe();
-        temp++;
+        if (current->isPheromone(colony))
+            return current;
+        temp = next;
     }
+    return nullptr;
 }
 
-// Poison everything on a certain point
-void StudentWorld::poisonAll(int x, int y) const
+/////////////
+// Actions //
+/////////////
+
+// Poisons everything at a certain point
+void StudentWorld::poisonAll(int x, int y)
 {
     list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
     temp = m_field[y][x].begin();
     while (*temp != nullptr && temp != m_field[y][x].end())
     {
+        next = ++temp;
+        --temp;
         Actor* current = *temp;
-        if (current->amIStunableAndPoisonable())
-            current->hurtMe();
-        temp++;
+        current->getPoisoned();
+        temp = next;
     }
 }
 
-// Add food due to a dead insect
-void StudentWorld::addFood(int x, int y)
-{
-    m_field[y][x].push_back(new Food(this, x, y, 100));
-}
-
-// Eat some food
-void StudentWorld::eatFood(Actor* eater, int x, int y, int type)
+// Stuns everything at a certain point
+void StudentWorld::stunAll(int x, int y)
 {
     list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
+    temp = m_field[y][x].begin();
+    while (*temp != nullptr && temp != m_field[y][x].end())
+    {
+        next = ++temp;
+        --temp;
+        Actor* current = *temp;
+        current->getStunned();
+        temp = next;
+    }
+}
+
+// Bites a random insect
+void StudentWorld::biteEnemyAt(Actor* me, int colony, int biteDamage)
+{
+    list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
+    temp = m_field[me->getY()][me->getX()].begin();
+    Actor** container = new Actor*[m_field[me->getY()][me->getX()].size()];
+    int containerSize = 0;
+    while (*temp != nullptr && temp != m_field[me->getY()][me->getX()].end())
+    {
+        next = ++temp;
+        --temp;
+        Actor* current = *temp;
+        if (current->isEnemy(colony) && current != me)
+        {
+            container[containerSize] = current;
+            containerSize++;
+        }
+        temp = next;
+    }
+    if (containerSize != 0)
+    {
+        int target = randInt(0, containerSize - 1);
+        container[target]->updateEnergy(-biteDamage);
+    }
+    delete []container;
+}
+
+// Randomly picks an open space to jump to
+void StudentWorld::jumpSomewhere(int x, int y, Actor* jumper)
+{
+    struct Coord
+    {
+        int x;
+        int y;
+    };
+    vector<Coord> possiblePlaces;
+    
+    const int PI = 3.14159265;
+    for (int i = 1; i<= 10; i++)
+        for (int j = 6; j <= 180; j+=6)
+        {
+            double tempX = i * cos(j * PI / 180);
+            int checkX = roundAwayFromZero(tempX);
+            double tempY = i * sin(j * PI / 180);
+            int checkY = roundAwayFromZero(tempY);
+            if (x + checkX >= 0 && x + checkX <= 63 && y + checkY >= 0 && y + checkY <= 63)
+                if (m_field[y + checkY][x + checkX].empty())
+                {
+                    Coord temp;
+                    temp.x = x + checkX;
+                    temp.y = y + checkY;
+                    possiblePlaces.push_back(temp);
+                }
+            if (x - checkX >= 0 && x - checkX <= 63 && y - checkY >= 0 && y - checkY <= 63)
+                if (m_field[y - checkY][x - checkX].empty())
+                {
+                    Coord temp;
+                    temp.x = x - checkX;
+                    temp.y = y - checkY;
+                    possiblePlaces.push_back(temp);
+                }
+        }
+    
+    int target = randInt(0, possiblePlaces.size() - 1);
+    Coord move = possiblePlaces[target];
+    
+    jumper->moveTo(move.x, move.y);
+}
+
+///////////////
+// Modifiers //
+///////////////
+
+// Adds a new food item, or increases the amt
+// if a food item is already there
+void StudentWorld::addFood(int x, int y, int amt)
+{
+    Actor* food = getFoodAt(x, y);
+    if (food == nullptr)
+        m_field[y][x].push_back(new Food(this, x, y, amt));
+    else
+    {
+        food->changeFood(amt);
+    }
+}
+
+// Eats food
+void StudentWorld::eatFood(Actor* eater, int x, int y)
+{
+    list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
     Actor* current = nullptr;
     temp = m_field[y][x].begin();
     while (*temp != nullptr && temp != m_field[y][x].end())
     {
+        next = ++temp;
+        --temp;
         current = *temp;
-        if (current->amIFood())
+        if (current->isEdible())
             break;
-        temp++;
+        temp = next;
     }
     
-    if (type == IID_BABY_GRASSHOPPER || type == IID_ADULT_GRASSHOPPER)
+    int foodAmount = current->getEnergy();
+    if (foodAmount < 200)
     {
-        int foodAmount = current->getHealth();
-        if (foodAmount < 200)
-        {
-            eater->changeHealth(foodAmount);
-            current->changeHealth(-foodAmount);
-        }
-        else
-        {
-            eater->changeHealth(200);
-            current->changeHealth(-200);
-        }
+        eater->updateEnergy(foodAmount);
+        current->updateEnergy(-foodAmount);
+    }
+    else
+    {
+        eater->updateEnergy(200);
+        current->updateEnergy(-200);
     }
 }
 
-// Change a baby to an adult
+// Change a baby into an adult
 void StudentWorld::addGrasshopper(int x, int y)
 {
-    m_field[y][x].push_back(new adultGrasshopper(this, x, y));
+    m_field[y][x].push_back(new AdultGrasshopper(this, x, y));
+}
+
+// Add ant of specified type
+void StudentWorld::addAnt(int x, int y, int colony)
+{
+    int image = 0;
+    switch (colony)
+    {
+        case 0:
+            image = IID_ANT_TYPE0;
+            break;
+        case 1:
+            image = IID_ANT_TYPE1;
+            break;
+        case 2:
+            image = IID_ANT_TYPE2;
+            break;
+        case 3:
+            image = IID_ANT_TYPE3;
+            break;
+    }
+    m_field[y][x].push_back(new Ant(this, x, y, colony, &m_files[colony], image));
+}
+
+// Add pheromone of specified colony
+void StudentWorld::addPheromone(int x, int y, int colony)
+{
+    Actor* pheromone = getPheromoneAt(x, y, colony);
+    if (pheromone != nullptr)
+    {
+        int amt = 768 - pheromone->getEnergy();
+        if (amt < 256)
+            pheromone->updateEnergy(amt);
+        else
+            pheromone->updateEnergy(256);
+        return;
+    }
+    int image = 0;
+    switch (colony)
+    {
+        case 0:
+            image = IID_PHEROMONE_TYPE0;
+            break;
+        case 1:
+            image = IID_PHEROMONE_TYPE1;
+            break;
+        case 2:
+            image = IID_PHEROMONE_TYPE2;
+            break;
+        case 3:
+            image = IID_PHEROMONE_TYPE3;
+            break;
+    }
+    m_field[y][x].push_back(new Pheromone(this, x, y, colony, image));
+}
+
+////////////
+// Checks //
+////////////
+
+bool StudentWorld::canMoveTo(int x, int y) const
+{
+    if (m_field[y][x].front() != nullptr && m_field[y][x].front()->blocksMovement())
+        return false;
+    return true;
+}
+
+bool StudentWorld::checkJumpSpace(int x, int y) const
+{
+    const int PI = 3.14159265;
+    for (int i = 1; i<= 10; i++)
+        for (int j = 6; j <= 180; j+=6)
+        {
+            double tempX = i * cos(j * PI / 180);
+            int checkX = roundAwayFromZero(tempX);
+            double tempY = i * sin(j * PI / 180);
+            int checkY = roundAwayFromZero(tempY);
+            if (x + checkX >= 0 && x + checkX <= 63 && y + checkY >= 0 && y + checkY <= 63)
+                if (m_field[y + checkY][x + checkX].empty())
+                    return true;
+            if (x - checkX >= 0 && x - checkX <= 63 && y - checkY >= 0 && y - checkY <= 63)
+                if (m_field[y - checkY][x - checkX].empty())
+                    return true;
+        }
+    return false;
+}
+
+bool StudentWorld::isEnemyAt(int x, int y, int colony) const
+{
+    list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
+    temp = m_field[y][x].begin();
+    while (*temp != nullptr && temp != m_field[y][x].end())
+    {
+        next = ++temp;
+        --temp;
+        Actor* current = *temp;
+        if (current->isEnemy(colony))
+            return true;
+        temp = next;
+    }
+    return false;
+}
+
+bool StudentWorld::isDangerAt(int x, int y, int colony) const
+{
+    list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
+    temp = m_field[y][x].begin();
+    while (*temp != nullptr && temp != m_field[y][x].end())
+    {
+        next = ++temp;
+        --temp;
+        Actor* current = *temp;
+        if (current->isEnemy(colony) || current->isDangerous(colony))
+            return true;
+        temp = next;
+    }
+    return false;
+}
+
+bool StudentWorld::isAntHillAt(int x, int y, int colony) const
+{
+    list<Actor*>::const_iterator temp;
+    list<Actor*>::const_iterator next;
+    temp = m_field[y][x].begin();
+    while (*temp != nullptr && temp != m_field[y][x].end())
+    {
+        next = ++temp;
+        --temp;
+        Actor* current = *temp;
+        if (current->isMyAntHill(colony))
+            return true;
+        temp = next;
+    }
+    return false;
+}
+
+//////////////////
+// Housekeeping //
+//////////////////
+
+void StudentWorld::increaseScore(int colony)
+{
+    return;
 }
 
 ///////////////////////
@@ -197,13 +463,29 @@ bool StudentWorld::loadField(Field &current)
     
     if (current.loadField(fieldFile, error) != Field::LoadResult::load_success)
     {
-        setError(fieldFile + " " + error);
+        setError(error);
         return false;
     }
     return true;
 }
 
-void StudentWorld::loadObjects(Field &current)
+bool StudentWorld::loadAnts(Compiler antFiles[])
+{
+    vector<string> ants;
+    ants = getFilenamesOfAntPrograms();
+    string error;
+    for (int i = 0; i < 4; i++)
+    {
+        if (! antFiles[i].compile(ants[i], error))
+        {
+            setError(ants[i] + " " + error);
+            return false;
+        }
+    }
+    return true;
+}
+
+void StudentWorld::loadObjects(Field &current, Compiler antFiles[])
 {
     for (int i = 0; i < VIEW_HEIGHT; i++)
         for (int j = 0; j < VIEW_WIDTH; j++)
@@ -215,11 +497,11 @@ void StudentWorld::loadObjects(Field &current)
             }
             if (item == Field::grasshopper)
             {
-                m_field[i][j].push_front(new babyGrasshopper(this, j, i));
+                m_field[i][j].push_front(new BabyGrasshopper(this, j, i));
             }
             if (item == Field::water)
             {
-                m_field[i][j].push_front(new Water(this, j, i));
+                m_field[i][j].push_front(new WaterPool(this, j, i));
             }
             if (item == Field::poison)
             {
@@ -227,7 +509,23 @@ void StudentWorld::loadObjects(Field &current)
             }
             if (item == Field::food)
             {
-                m_field[i][j].push_front(new Food(this, j, i));
+                m_field[i][j].push_front(new Food(this, j, i, 6000));
+            }
+            if (item == Field::anthill0)
+            {
+                m_field[i][j].push_front(new AntHill(this, j, i, 0, &antFiles[0]));
+            }
+            if (item == Field::anthill1)
+            {
+                m_field[i][j].push_front(new AntHill(this, j, i, 1, &antFiles[1]));
+            }
+            if (item == Field::anthill2)
+            {
+                m_field[i][j].push_front(new AntHill(this, j, i, 2, &antFiles[2]));
+            }
+            if (item == Field::anthill3)
+            {
+                m_field[i][j].push_front(new AntHill(this, j, i, 3, &antFiles[3]));
             }
         }
 }
@@ -236,15 +534,19 @@ void StudentWorld::loadObjects(Field &current)
 void StudentWorld::resetActorMovements()
 {
     list<Actor*>::iterator temp;
+    list<Actor*>::iterator next;
     for (int i = 0; i < VIEW_HEIGHT; i++)
         for (int j = 0; j < VIEW_WIDTH; j++)
         {
+
             temp = m_field[i][j].begin();
             while (*temp != nullptr && temp != m_field[i][j].end())
             {
+                next = ++temp;
+                --temp;
                 Actor* current = *temp;
                 current->resetMovement();
-                temp++;
+                temp = next;
             }
         }
 }
@@ -252,19 +554,22 @@ void StudentWorld::resetActorMovements()
 void StudentWorld::removeDeadActors()
 {
     list<Actor*>::iterator current;
+    list<Actor*>::iterator next;
     for (int i = 0; i < VIEW_HEIGHT; i++)
         for (int j = 0; j < VIEW_WIDTH; j++)
         {
             current = m_field[i][j].begin();
             while (*current != nullptr && current != m_field[i][j].end())
             {
+                next = ++current;
+                --current;
                 Actor* temp = *current;
-                if (! temp->getLife())
+                if (! temp->amIAlive())
                 {
                     delete temp;
                     m_field[i][j].erase(current);
                 }
-                current++;
+                current = next;
             }
         }
 }
