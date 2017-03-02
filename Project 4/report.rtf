@@ -1,0 +1,175 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf760
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11360\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc\partightenfactor0
+
+\f0\b\fs28 \cf0 CS 32 Project 3\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs24 \cf0 High-Level Description\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc\partightenfactor0
+
+\i \cf0 StudentWorld\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 virtual int init()
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0 \cf0 This function was defined because it was required by the spec\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 virtual int move()
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0 \cf0 This function was defined because it was required by the spec\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 virtual void cleanUp()
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0 \cf0 This function was defined because it was required by the spec\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 Actor* getFoodAt(int x, int y) const 
+\i0\b0 \
+This function will return a pointer to the food object at the indicated position, or a nullptr if no food object exists there. It was defined here because actors need to be able to ask StudentWorld where food exists. This function is not virtual because no classes are derived from StudentWorld.\
+
+\i\b Actor* getPheromoneAt(int x, int y, int colony) const
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0 \cf0 This function will return a pointer to the pheromone object of the indicated colony at the indicated position, or a nullptr if no pheromone object of the indicated colony exists there. It was defined here because actors need to be able to ask StudentWorld where pheromone exists. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void poisonAll(int x, int y)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will poison all actors at the indicated position. It was defined here because poison objects need to be able to ask StudentWorld to poison all objects at their position. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void stunAll(int x, int y)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will stun all actors at the indicated position. It was defined here because waterpool objected need to be able to ask StudentWorld to stun all objects at their position. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void biteEnemyAt(Actor* me, int colony, int biteDamage)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will randomly pick an actor at Actor me\'92s location to bite with the indicated biteDamage. It was defined here because insects need to be able to bite other insects. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void jumpSomewhere(int x, int y, Actor* jumper)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will randomly find a location to jump to within a circle of radius 10 and then move Actor jumper there. It was defined here because adultGrasshoppers need to have a jumping functionality. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void addFood(int x, int y, int amt)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will either allocate a new food object at the indicated position with the indicated amount, or add the indicated amount to the food object already existing there. It was defined here because Actors need to be able to add food to various positions on the grid. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void eatFood(Actor* eater, int x, int y)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will allow Actor eater to eat the food object at the indicated position. It was defined here because Actors need to be able to eat from food objects on the grid. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void addGrasshopper(int , int y)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will convert the babyGrasshopper at the indicated position into an adultGrasshopper. It was defined here because babyGrasshoppers need to be able to grow into adultGrasshoppers. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void addAnt(int x, int y, int colony)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will add an ant of the indicated colony at the indicated position. It was added here because anthills need to be able to give birth to new ants. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 void addPheromone(int x, int y, int colony)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will add a pheromone from the indicated colony at the indicated position. It was added here because ants need to be able to create new pheromone objects. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 bool canMoveTo(int x, int y)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will determine whether it is possible to move to the indicated position. It was added here because all insects need to determine whether it is possible to move to various positions. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 bool checkJumpSpace(int x, int y)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will determine whether there is an empty position to jump to within a circle of radius 10. It was added here because adultGrasshoppers need to have a jumping functionality. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 bool isEnemyAt(int x, int y, int colony)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will allow ants of the indicated colony to know whether there are any enemies at the indicated position. It was added here because ants will sometimes need this information for an if command. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 bool isDangerAt(int x, int y, int colony)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will allow ants of the indicated colony to know whether there are any dangerous objects at the indicated position. It was added here because ants will sometimes need this information for an if command. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 bool isAntHillAt(int x, int y, int colony)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will allow ants to know whether their colony\'92s anthill is at the indicated position or not. It was added here because ants need to know where their anthill is. This function is not virtual because no classes are derived from StudentWorld.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc\partightenfactor0
+
+\i\b \cf0 Actor\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 virtual void doSomething() = 0\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function was required by the spec. It allows each actor to execute its actions. This function was defined as pure virtual because each actor will have its own unique doSomething.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 virtual void getBitten(int amt)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will reduce the actor\'92s health by amt. It was defined in Actor so that StudentWorld can call it on any actor. I made it virtual because for actor\'92s that cannot be bitten the function will be redefined to simply return.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 virtual void getPoisoned()\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will poison the actor. It was defined in Actor so that StudentWorld can call it on any actor. I made it virtual because for actor\'92s that cannot be poisoned the function will be redefined to simply return.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 virtual void getStunned()\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will stun the actor. It was defined in Actor so that StudentWorld can call it on any actor. I made it virtual because for actor\'92s that cannot be stunned the function will be redefined to simply return.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i\b \cf0 virtual void resetMovement()\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i0\b0 \cf0 This function will\
+\
+
+\b Unfinished Functionality\
+
+\b0 \
+\
+
+\b Design Decisions and Assumptions\
+
+\b0 \
+\
+
+\b Class Testing\
+}

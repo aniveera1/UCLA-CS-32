@@ -3,11 +3,11 @@
 
 #include "GameWorld.h"
 #include "GameConstants.h"
+#include "Compiler.h"
 #include <string>
 #include <list>
 
 class Actor;
-class Compiler;
 class Field;
 
 class StudentWorld : public GameWorld
@@ -28,9 +28,6 @@ public:
     
     // Ends the simulation
     virtual void cleanUp();
-
-    // Add an actor to the world
-    void    addActor(Actor* a);
     
     // Accessors
     Actor*  getFoodAt(int x, int y) const;   // Returns null if none =>DONE
@@ -55,18 +52,16 @@ public:
     bool    isEnemyAt(int x, int y, int colony) const;
     bool    isDangerAt(int x, int y, int colony) const;
     bool    isAntHillAt(int x, int y, int colony) const;
-    
-    // Housekeeping
-    void    increaseScore(int colony);      // TODO
 private:
     // Helper functions for init()
     bool    loadField(Field &current);
-    void    loadObjects(Field &current, Compiler antFiles[]);
     bool    loadAnts(Compiler antFiles[]);
+    void    loadObjects(Field &current, Compiler antFiles[]);
     
     // Helper function for move()
     void    resetActorMovements();
     void    removeDeadActors();
+    std::string formatDisplayText();
     
     // 2D Array of Linked Lists
     std::list<Actor*> m_field[VIEW_HEIGHT][VIEW_WIDTH];
@@ -74,8 +69,14 @@ private:
     // Tick Counter
     int     m_ticks;
     
+    // Ant counter
+    int     m_ants[4];
+    
+    // Winner tracker
+    int     m_winner;
+    
     // Bugs Files
-    Compiler* m_files;
+    Compiler m_files[4];
 };
 
 #endif // STUDENTWORLD_H_

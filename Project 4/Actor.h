@@ -2,9 +2,9 @@
 #define ACTOR_H_
 
 #include "GraphObject.h"
+#include "Compiler.h"
 
 class StudentWorld;
-class Compiler;
 
 class Actor : public GraphObject
 {
@@ -15,31 +15,34 @@ public:
     // Pure virtual functions
     virtual void    doSomething() = 0;
     
-    // Virtual functions
-    virtual bool    blocksMovement() const;
+    // Actions
     virtual void    getBitten(int amt);
     virtual void    getPoisoned();
     virtual void    getStunned();
+    virtual void    resetMovement();
+    virtual void    changeFood(int amt);
+    virtual void    updateEnergy(int amt);
+    
+    // Checks
     virtual bool    isEdible() const;
     virtual bool    isPheromone(int colony) const;
     virtual bool    isEnemy(int colony) const;
     virtual bool    isDangerous(int colony) const;
     virtual bool    isMyAntHill(int colony) const;
-    virtual bool    didIMove() const;
-    virtual void    resetMovement();
-    virtual void    getFood(int &amt) const;
-    virtual void    changeFood(int amt);
-    virtual int     getEnergy() const;
-    virtual void    updateEnergy(int amt);
     virtual bool    isPoison() const;
-    
-    // Member function
-    StudentWorld*   getWorld() const;
+    virtual bool    didIMove() const;
+    virtual bool    blocksMovement() const;
     bool            amIAlive() const;
-    void            killMe();
+    
+    // Accessors
+    virtual int     getColony() const;
+    virtual void    getFood(int &amt) const;
+    virtual int     getEnergy() const;
 protected:
-    // Helper function
-    Direction randomDir();
+    // Helper functions
+    StudentWorld*   getWorld() const;
+    void            killMe();
+    Direction       randomDir();
 private:
     StudentWorld*   m_field;
     bool            m_life;
@@ -48,7 +51,10 @@ private:
 class Pebble : public Actor
 {
 public:
+    // Constructor
     Pebble(StudentWorld* sw, int startX, int startY);
+    
+    // Member functions
     virtual void    doSomething();
     virtual bool    blocksMovement() const;
 };
@@ -56,30 +62,21 @@ public:
 class EnergyHolder : public Actor
 {
 public:
+    // Constructor
     EnergyHolder(StudentWorld* sw, int startX, int startY, Direction startDir, int energy, int imageID, int depth);
     
-    // Get this actor's amount of energy (for a Pheromone, same as strength).
+    // Accessors
     virtual int     getEnergy() const;
-    
-    // Adjust this actor's amount of energy upward or downward.
-    virtual void    updateEnergy(int amt);
-    
-    // Get this actor's amount of food
     virtual void    getFood(int &amt) const;
     
-    // Adjust this actor's amount of food
+    // Actions
+    virtual void    updateEnergy(int amt);
     virtual void    changeFood(int amt);
-    
-    // Add an amount of food to this actor's location.
-    void            addFood(int amt);
-    
-    // Have this actor pick up an amount of food.
+    void            addFood(int amt);       // Allocates a new food object or adds more to an existing one
     int             pickupFood(int amt);
-    
-    // Have this actor pick up an amount of food and eat it.
     int             pickupAndEatFood(int amt);
     
-    // Does this actor become food when it dies?
+    // Checks
     virtual bool    becomesFoodUponDeath() const;
 private:
     int             m_health;
@@ -89,7 +86,10 @@ private:
 class Food : public EnergyHolder
 {
 public:
+    // Constructor
     Food(StudentWorld* sw, int startX, int startY, int energy);
+    
+    // Member functions
     virtual void    doSomething();
     virtual bool    isEdible() const;
 };
@@ -97,7 +97,10 @@ public:
 class AntHill : public EnergyHolder
 {
 public:
+    // Constructor
     AntHill(StudentWorld* sw, int startX, int startY, int colony, Compiler* program);
+    
+    // Member functions
     virtual void    doSomething();
     virtual bool    isMyAntHill(int colony) const;
 private:
@@ -108,12 +111,12 @@ private:
 class Pheromone : public EnergyHolder
 {
 public:
+    // Constructor
     Pheromone(StudentWorld* sw, int startX, int startY, int colony, int imageID);
-    virtual void doSomething();
-    virtual bool isPheromone(int colony) const;
     
-    // Increase the strength (i.e., energy) of this pheromone.
-    void increaseStrength();
+    // Member functions
+    virtual void    doSomething();
+    virtual bool    isPheromone(int colony) const;
 private:
     int         m_colony;
 };
@@ -121,36 +124,56 @@ private:
 class TriggerableActor : public Actor
 {
 public:
+    // Constructor
     TriggerableActor(StudentWorld* sw, int x, int y, int imageID);
-    virtual bool isDangerous(int colony) const;
+    
+    // Member functions
+    virtual bool    isDangerous(int colony) const;
 };
 
 class WaterPool : public TriggerableActor
 {
 public:
+    // Constructor
     WaterPool(StudentWorld* sw, int x, int y);
-    virtual void doSomething();
+    
+    // Member functions
+    virtual void    doSomething();
 };
 
 class Poison : public TriggerableActor
 {
 public:
+    // Constructor
     Poison(StudentWorld* sw, int x, int y);
-    virtual void doSomething();
+    
+    // Member functions
+    virtual void    doSomething();
+    virtual bool    isPoison() const;
 };
 
 class Insect : public EnergyHolder
 {
 public:
+    // Constructor
     Insect(StudentWorld* world, int startX, int startY, int energy, int imageID);
-    virtual void getBitten(int amt);
-    virtual void getPoisoned();
-    virtual void getStunned();
-    virtual bool isEnemy(int colony);
-    virtual bool becomesFoodUponDeath() const;
+    
+    // Actions
+    virtual void    getBitten(int amt);
+    virtual void    getPoisoned();
+    virtual void    getStunned();
+    virtual void    resetMovement();
+    
+    // Checks
+    virtual bool    isEnemy(int colony);
     virtual bool    isDangerous(int colony) const;
+    virtual bool    becomesFoodUponDeath() const;
+    virtual bool    didIMove() const;
+    
+    // Accessor
     virtual int     getColony() const;
 protected:
+    // Member functions
     int     getSleep() const;
     void    changeSleep(int amount);
     bool    beforeDoSomethingChecks();
@@ -163,16 +186,21 @@ private:
 class Ant : public Insect
 {
 public:
+    // Constructor
     Ant(StudentWorld* sw, int startX, int startY, int colony, Compiler* program, int imageID);
+    
+    // Member functions
     virtual void    doSomething();
     virtual bool    isEnemy(int colony) const;
     virtual int     getColony() const;
     virtual bool    moveForwardIfPossible();
     virtual void    getBitten(int amt);
-    
-    // Member function
-    Compiler*       getFile();
 private:
+    // Helper function
+    bool            processCmd(Compiler::Command cmd);
+    Compiler*       getFile();
+    
+    
     int     m_instruction;
     int     m_random;
     int     m_colony;
@@ -184,8 +212,10 @@ private:
 class Grasshopper : public Insect
 {
 public:
+    // Constructor
     Grasshopper(StudentWorld* sw, int startX, int startY, int energy, int imageID);
 protected:
+    // Member functions
     void    moveMe();
     void    eatFood();
 private:
@@ -195,21 +225,23 @@ private:
 class BabyGrasshopper : public Grasshopper
 {
 public:
+    // Constructor
     BabyGrasshopper(StudentWorld* sw, int startX, int startY);
     
-    // Virtual functions
+    // Member functions
     virtual void    doSomething();
 };
 
 class AdultGrasshopper : public Grasshopper
 {
 public:
+    // Constructor
     AdultGrasshopper(StudentWorld* sw, int startX, int startY);
     
-    // Virtual functions
+    // Member functions
     virtual void    doSomething();
-    virtual void getPoisoned();
-    virtual void getStunned();
+    virtual void    getPoisoned();
+    virtual void    getStunned();
 };
 
 #endif // ACTOR_H_
