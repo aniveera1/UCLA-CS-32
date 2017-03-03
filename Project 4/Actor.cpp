@@ -7,6 +7,29 @@
 using namespace std;
 
 ///////////////////////////////////////////////////
+// Global Constants
+///////////////////////////////////////////////////
+
+const int BASE_HEALTH                       = 100;
+const int ANTHILL_STARTING_HEALTH           = 8999;
+const int PHEROMONE_STARTING_HEALTH         = 256;
+const int ANT_STARTING_HEALTH               = 1500;
+const int BABYGRASSHOPPER_STARTING_HEALTH   = 500;
+const int ADULTGRASSHOPPER_STARTING_HEALTH  = 1600;
+
+const int ANTHILL_FOOD_EATING_CAPACITY      = 10000;
+const int ENERGY_NEEDED_TO_CREATE_ANT       = 2000;
+const int ANT_FOOD_EATING_CAPACITY          = 100;
+const int ANT_FOOD_PICKUP_CAPACITY          = 400;
+const int ANT_FOOD_CAPACITY                 = 1800;
+
+const int INSECT_POISON_DAMAGE              = -150;
+const int ANT_BITE_DAMAGE                   = 15;
+const int GRASSHOPPER_BITE_DAMAGE           = 50;
+
+const int FOOD_FROM_DEAD_INSECT             = 100;
+
+///////////////////////////////////////////////////
 // Actor Implementation
 ///////////////////////////////////////////////////
 
@@ -106,7 +129,7 @@ void Actor::getFood(int &amt) const
 
 int Actor::getEnergy() const
 {
-    return 100;
+    return BASE_HEALTH;
 }
 
 // Helper functions
@@ -205,7 +228,15 @@ void EnergyHolder::addFood(int amt)
 
 int EnergyHolder::pickupFood(int amt)
 {
-    int foodAmount = getWorld()->getFoodAt(this->getX(), this->getY())->getEnergy();
+    // Check whether a food object
+    // actually exists at the current
+    // position
+    Actor* temp = getWorld()->getFoodAt(this->getX(), this->getY());
+    if (temp == nullptr)
+        return 0;
+    
+    // If so, retrieve its current amount
+    int foodAmount = temp->getEnergy();
     
     // If trying to pickup more food than
     // available, simply pickup rest of food
@@ -222,15 +253,13 @@ int EnergyHolder::pickupFood(int amt)
 
 int EnergyHolder::pickupAndEatFood(int amt)
 {
+    // Pick up the specified amount
+    // of food
     int health = pickupFood(amt);
+    
+    // Eat it
     updateEnergy(health);
     return health;
-}
-
-// Checks
-bool EnergyHolder::becomesFoodUponDeath() const
-{
-    return false;
 }
 
 ///////////////////////////////////////////////////
@@ -262,13 +291,18 @@ bool Food::isEdible() const
 
 // Constructor
 AntHill::AntHill(StudentWorld* sw, int startX, int startY, int colony, Compiler* program)
-: EnergyHolder(sw, startX, startY, right, 8999, IID_ANT_HILL, 2), m_colony(colony), m_behavior(program)
+: EnergyHolder(sw, startX, startY, right, ANTHILL_STARTING_HEALTH, IID_ANT_HILL, 2), m_colony(colony), m_behavior(program)
 {
 }
 
 // Member functions
 void AntHill::doSomething()
 {
+    // Make sure the Actor
+    // is still alive
+    if (! amIAlive())
+        return;
+    
     // Reduce energy and check if dead
     updateEnergy(-1);
     if (getEnergy() <= 0)
@@ -280,15 +314,15 @@ void AntHill::doSomething()
     // Eat any food placed on anthill
     if (getWorld()->getFoodAt(this->getX(), this->getY()) != nullptr)
     {
-        pickupAndEatFood(10000);
+        pickupAndEatFood(ANTHILL_FOOD_EATING_CAPACITY);
         return;
     }
     
     // Create new ants if enough energy
-    if (getEnergy() >= 2000)
+    if (getEnergy() >= ENERGY_NEEDED_TO_CREATE_ANT)
     {
         getWorld()->addAnt(this->getX(), this->getY(), m_colony);
-        updateEnergy(-1500);
+        updateEnergy(-ANT_STARTING_HEALTH);
     }
 }
 
@@ -303,7 +337,7 @@ bool AntHill::isMyAntHill(int colony) const
 
 // Constructor
 Pheromone::Pheromone(StudentWorld* sw, int startX, int startY, int colony, int imageID)
-: EnergyHolder(sw, startX, startY, right, 256, imageID, 2), m_colony(colony)
+: EnergyHolder(sw, startX, startY, right, PHEROMONE_STARTING_HEALTH, imageID, 2), m_colony(colony)
 {
 }
 
@@ -362,7 +396,7 @@ void WaterPool::doSomething()
 
 // Constructor
 Poison::Poison(StudentWorld* sw, int x, int y)
-: TriggerableActor(sw, x, y, IID_POISON)
+: TriggerableActor(sw, x, y, IID_POISON), m_moved(false)
 {
 }
 
@@ -370,12 +404,27 @@ Poison::Poison(StudentWorld* sw, int x, int y)
 void Poison::doSomething()
 {
     // Poison everything on its spot
-    getWorld()->poisonAll(this->getX(), this->getY());
+    // once per tick
+    if (! didIMove())
+    {
+        getWorld()->poisonAll(this->getX(), this->getY());
+        m_moved = true;
+    }
 }
 
 bool Poison::isPoison() const
 {
     return true;
+}
+
+void Poison::resetMovement()
+{
+    m_moved = false;
+}
+
+bool Poison::didIMove() const
+{
+    return m_moved;
 }
 
 ///////////////////////////////////////////////////
@@ -396,7 +445,7 @@ void Insect::getBitten(int amt)
 
 void Insect::getPoisoned()
 {
-    updateEnergy(-150);
+    updateEnergy(INSECT_POISON_DAMAGE);
 }
 
 void Insect::getStunned()
@@ -420,11 +469,6 @@ bool Insect::isDangerous(int colony) const
     if (colony == INVALID_COLONY_NUMBER)
         return true;
     return ! (colony == this->getColony());
-}
-
-bool Insect::becomesFoodUponDeath() const
-{
-    return true;
 }
 
 bool Insect::didIMove() const
@@ -451,6 +495,11 @@ void Insect::changeSleep(int amount)
 
 bool Insect::beforeDoSomethingChecks()
 {
+    // Check that the actor is
+    // actually alive
+    if (! amIAlive())
+        return true;
+    
     // Ensure a Insect only moves
     // once per tick
     if (didIMove())
@@ -463,7 +512,7 @@ bool Insect::beforeDoSomethingChecks()
     updateEnergy(-1);
     if (getEnergy() <= 0)
     {
-        getWorld()->addFood(this->getX(), this->getY(), 100);
+        getWorld()->addFood(this->getX(), this->getY(), FOOD_FROM_DEAD_INSECT);
         killMe();
         return true;
     }
@@ -489,7 +538,7 @@ void Insect::IMoved()
 
 // Constructor
 Ant::Ant(StudentWorld* sw, int startX, int startY, int colony, Compiler* program, int imageID)
-: Insect(sw, startX, startY, 1500, imageID), m_instruction(0), m_random(0), m_colony(colony), m_file(program), m_blocked(false), m_bit(false)
+: Insect(sw, startX, startY, ANT_STARTING_HEALTH, imageID), m_instruction(0), m_random(0), m_colony(colony), m_file(program), m_blocked(false), m_bit(false)
 {
 }
 
@@ -611,14 +660,14 @@ bool Ant::processCmd(Compiler::Command cmd)
         
         // Attempt to eat 100 food, if
         // not eat rest of food
-        if (food <= 100)
+        if (food <= ANT_FOOD_EATING_CAPACITY)
         {
             changeFood(-food);
             updateEnergy(food);
             return true;
         }
-        changeFood(-100);
-        updateEnergy(100);
+        changeFood(-ANT_FOOD_EATING_CAPACITY);
+        updateEnergy(ANT_FOOD_EATING_CAPACITY);
         return true;
     }
     else if (cmd.opcode == Compiler::dropFood)
@@ -635,7 +684,7 @@ bool Ant::processCmd(Compiler::Command cmd)
         ++m_instruction;
         if (getWorld()->isEnemyAt(this->getX(), this->getY(), m_colony))
         {
-            getWorld()->biteEnemyAt(this, m_colony, 15);
+            getWorld()->biteEnemyAt(this, m_colony, ANT_BITE_DAMAGE);
         }
         return true;
     }
@@ -646,16 +695,16 @@ bool Ant::processCmd(Compiler::Command cmd)
         this->getFood(currentFood);
         
         // Determine how much capacity is left
-        int foodCapacity = 1800 - currentFood;
+        int foodCapacity = ANT_FOOD_CAPACITY - currentFood;
         
         // Pickup 400 if enough capacity, otherwise
         // pickup enough food to reach 1800 capacity
-        if (foodCapacity < 400)
+        if (foodCapacity < ANT_FOOD_PICKUP_CAPACITY)
         {
             pickupFood(foodCapacity);
             return true;
         }
-        pickupFood(400);
+        pickupFood(ANT_FOOD_PICKUP_CAPACITY);
         return true;
     }
     else if (cmd.opcode == Compiler::emitPheromone)
@@ -933,7 +982,7 @@ void Grasshopper::eatFood()
 
 // Constructor
 BabyGrasshopper::BabyGrasshopper(StudentWorld* sw, int startX, int startY)
-: Grasshopper(sw, startX, startY, 500, IID_BABY_GRASSHOPPER)
+: Grasshopper(sw, startX, startY, BABYGRASSHOPPER_STARTING_HEALTH, IID_BABY_GRASSHOPPER)
 {
 }
 
@@ -945,10 +994,10 @@ void BabyGrasshopper::doSomething()
         return;
     
     // Check whether to transform
-    if (getEnergy() >= 1600)
+    if (getEnergy() >= ADULTGRASSHOPPER_STARTING_HEALTH)
     {
         getWorld()->addGrasshopper(this->getX(), this->getY());
-        getWorld()->addFood(this->getX(), this->getY(), 100);
+        getWorld()->addFood(this->getX(), this->getY(), FOOD_FROM_DEAD_INSECT);
         killMe();
         return;
     }
@@ -970,7 +1019,7 @@ void BabyGrasshopper::doSomething()
 
 // Constructor
 AdultGrasshopper::AdultGrasshopper(StudentWorld* sw, int startX, int startY)
-: Grasshopper(sw, startX, startY, 1600, IID_ADULT_GRASSHOPPER)
+: Grasshopper(sw, startX, startY, ADULTGRASSHOPPER_STARTING_HEALTH, IID_ADULT_GRASSHOPPER)
 {
 }
 
@@ -984,7 +1033,7 @@ void AdultGrasshopper::doSomething()
     // Check insect biting
     if (getWorld()->isEnemyAt(this->getX(), this->getY(), INVALID_COLONY_NUMBER) && randInt(1, 3) == 3)
     {
-        getWorld()->biteEnemyAt(this, INVALID_COLONY_NUMBER, 50);
+        getWorld()->biteEnemyAt(this, INVALID_COLONY_NUMBER, GRASSHOPPER_BITE_DAMAGE);
         changeSleep(2);
         return;
     }

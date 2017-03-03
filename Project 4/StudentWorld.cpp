@@ -302,12 +302,14 @@ void StudentWorld::jumpSomewhere(int x, int y, Actor* jumper)
 // if a food item is already there
 void StudentWorld::addFood(int x, int y, int amt)
 {
+    // Do nothing if the specified
+    // amount is 0
     if (amt == 0)
         return;
-    Actor* food = getFoodAt(x, y);
     
     // Check if there is already a food
     // object there or not
+    Actor* food = getFoodAt(x, y);
     if (food == nullptr)
         m_field[y][x].push_back(new Food(this, x, y, amt));
     else

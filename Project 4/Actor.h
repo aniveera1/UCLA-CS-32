@@ -75,9 +75,6 @@ public:
     void            addFood(int amt);       // Allocates a new food object or adds more to an existing one
     int             pickupFood(int amt);
     int             pickupAndEatFood(int amt);
-    
-    // Checks
-    virtual bool    becomesFoodUponDeath() const;
 private:
     int             m_health;
     int             m_food;
@@ -150,6 +147,10 @@ public:
     // Member functions
     virtual void    doSomething();
     virtual bool    isPoison() const;
+    virtual void    resetMovement();
+    virtual bool    didIMove() const;
+private:
+    bool        m_moved;
 };
 
 class Insect : public EnergyHolder
@@ -167,7 +168,6 @@ public:
     // Checks
     virtual bool    isEnemy(int colony);
     virtual bool    isDangerous(int colony) const;
-    virtual bool    becomesFoodUponDeath() const;
     virtual bool    didIMove() const;
     
     // Accessor
@@ -196,10 +196,9 @@ public:
     virtual bool    moveForwardIfPossible();
     virtual void    getBitten(int amt);
 private:
-    // Helper function
+    // Helper functions
     bool            processCmd(Compiler::Command cmd);
     Compiler*       getFile();
-    
     
     int     m_instruction;
     int     m_random;
